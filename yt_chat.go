@@ -13,13 +13,10 @@ import (
 	"time"
 )
 
-type SubMenuItems struct {
-	Title        string
-	Continuation struct {
-		ReloadContinuationData struct {
-			Continuation string
-		}
-	}
+type ReloadContinuation struct {
+	ReloadContinuationData struct {
+		Continuation string `json:"continuation"`
+	} `json:"reloadContinuationData"`
 }
 
 type InnerTubeContext struct {
@@ -117,19 +114,11 @@ type InitialData struct {
 		TwoColumnWatchNextResults struct {
 			ConversationBar struct {
 				LiveChatRenderer struct {
-					Header struct {
-						LiveChatHeaderRenderer struct {
-							ViewSelector struct {
-								SortFilterSubMenuRenderer struct {
-									SubMenuItems []SubMenuItems `json:"subMenuItems"`
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+					Continuations []ReloadContinuation `json:"continuations"`
+				} `json:"liveChatRenderer"`
+			} `json:"conversationBar"`
+		} `json:"twoColumnWatchNextResults"`
+	} `json:"contents"`
 }
 
 var (
@@ -181,15 +170,14 @@ func fetchChatMessages(initialContinuationInfo string, ytCfg YtCfg) ([]ChatMessa
 	if error != nil {
 		return nil, "", 0, error
 	}
-	if response.StatusCode != 200 {
-		return nil, "", 0, fmt.Errorf("some error fetching chat messages status code: %d", response.StatusCode)
-	}
-
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, "", 0, err
 	}
 	response.Body.Close()
+	if response.StatusCode != 200 {
+		return nil, "", 0, fmt.Errorf("some error fetching chat messages status code: %d, response_text: %s", response.StatusCode, string(body))
+	}
 	var chatMsgResp ChatMessagesResponse
 	json.Unmarshal([]byte(string(body)), &chatMsgResp)
 	actions := chatMsgResp.ContinuationContents.LiveChatContinuation.Actions
@@ -295,12 +283,11 @@ func ParseInitialData(videoUrl string) (string, YtCfg, error) {
 	var _initialData InitialData
 	json.Unmarshal([]byte(initialData), &_initialData)
 
-	subMenuItems := _initialData.Contents.TwoColumnWatchNextResults.ConversationBar.LiveChatRenderer.Header.LiveChatHeaderRenderer.ViewSelector.SortFilterSubMenuRenderer.SubMenuItems
-	if len(subMenuItems) == 0 {
+	continuations := _initialData.Contents.TwoColumnWatchNextResults.ConversationBar.LiveChatRenderer.Continuations
+	if len(continuations) == 0 || continuations[0].ReloadContinuationData.Continuation == "" {
 		return "", YtCfg{}, ErrStreamNotLive
 	}
-	initialContinuationInfo := subMenuItems[1].Continuation.ReloadContinuationData.Continuation
-	return initialContinuationInfo, _ytCfg, nil
+	return continuations[0].ReloadContinuationData.Continuation, _ytCfg, nil
 }
 
 func FetchContinuationChat(continuation string, ytCfg YtCfg) ([]ChatMessage, string, error) {

@@ -24,7 +24,7 @@ func main() {
 	// Adding cookies is OPTIONAL
 	YtChat.AddCookies(customCookies)
 
-	continuation, cfg, error := YtChat.ParseInitialData("https://www.youtube.com/watch?v=5qap5aO4i9A")
+	continuation, cfg, error := YtChat.ParseInitialData("https://www.youtube.com/watch?v=gCNeDWCI0vo")
 	if error != nil {
 		log.Fatal(error)
 	}
