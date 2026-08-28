@@ -108,8 +108,8 @@ for {
 Sleeping for the full `timeoutMs` instead reproduces the behaviour of
 `FetchContinuationChat`.
 
-Note that `timeoutMs` is a hint, not an enforced limit. Polling faster than it
-is possible, but going too aggressive risks HTTP 429 responses, so handle that
+Note that `timeoutMs` is a hint, not an enforced limit. Polling faster is
+possible, but going too aggressive risks HTTP 429 responses, so handle that
 case if you lower the interval.
 
 ## Screenshot
